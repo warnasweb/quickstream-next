@@ -11,6 +11,7 @@ const QuickStreamPaymentForm = () => {
   const [paymentResult, setPaymentResult] = useState(null);
   const [amount, setAmount] = useState('100.00'); // Default amount
   const [accountToken, setAccountToken] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleTrustedFrameReady = (frame) => {
     trustedFrameRef.current = frame;
@@ -65,6 +66,7 @@ const QuickStreamPaymentForm = () => {
       alert('Frame not ready yet');
       return;
     }
+    setLoading(true);
     trustedFrameRef.current.submitForm((errors, data) => {
       if (errors) {
         console.error('Submit error:', errors);
@@ -77,6 +79,7 @@ const QuickStreamPaymentForm = () => {
       } else {
         alert('No token received.');
       }
+      setLoading(false);
     });
   };
 
@@ -86,6 +89,7 @@ const QuickStreamPaymentForm = () => {
       alert('Frame not ready yet');
       return;
     }
+    setLoading(true);
     trustedFrameRef.current.submitForm((errors, data) => {
       if (errors) {
         console.error('Submit error:', errors);
@@ -105,12 +109,15 @@ const QuickStreamPaymentForm = () => {
             } else {
               alert('Payment failed: ' + (res.data.message || JSON.stringify(res.error)));
             }
+            setLoading(false);
           })
           .catch(err => {
             setPaymentResult(err.response?.data );
+            setLoading(false);
             console.error('Payment error:', err);
           });
       } else {
+        setLoading(false);
         alert('No token received.');
       }
     });
@@ -122,6 +129,7 @@ const QuickStreamPaymentForm = () => {
     alert('No single use token available. Please generate one first.');
     return;
   }
+  setLoading(true);
   try {
     const response = await axios.post('/api/account-token', {
       singleUseTokenId: token,
@@ -135,8 +143,10 @@ const QuickStreamPaymentForm = () => {
     } else {
       alert('Account token not found in response.');
     }
+    setLoading(false);
   } catch (error) {
     setPaymentResult(error.response?.data || { error: error.message });
+    setLoading(false);
     alert('Failed to create account token: ' + (error.response?.data?.message || error.message));
     console.error(error);
   }
@@ -150,6 +160,7 @@ const handlePayByAccountToken = async (e) => {
       alert('No account token available. Please create one first.');
       return;
     }
+    setLoading(true);
     try {
       const response = await axios.post('/api/pay', {
         paymentToken: accountToken,
@@ -157,15 +168,18 @@ const handlePayByAccountToken = async (e) => {
         isAccountToken: true, // Optional: let your backend know this is an account token
       });
       setPaymentResult(response.data);
+      setLoading(false);
       alert('Payment by account token processed!');
     } catch (error) {
       setPaymentResult(error.response?.data || { error: error.message });
+      setLoading(false);
       alert('Failed to pay by account token: ' + (error.response?.data?.message || error.message));
       console.error(error);
     }
   };
 
   return (
+    
     <form onSubmit={handleSubmit} style={{ padding: '1rem' }}>
       <h2 className="text-3xl font-bold mb-6 text-center text-blue-700">
   QuickStream Payment
@@ -208,28 +222,28 @@ const handlePayByAccountToken = async (e) => {
         Submit Payment
       </button>
 
+{loading && (
+  <div className="flex items-center justify-center my-4">
+    <svg className="animate-spin h-8 w-8 text-blue-600 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+    </svg>
+    <span className="text-blue-600 font-semibold">Processing...</span>
+  </div>
+)}
        <QuickStreamPaymentButtons
       handleGetSingleToken={handleGetSingleToken}
       handlePayAdhoc={handlePayAdhoc}
       handleCreateAccountToken={handleCreateAccountToken}
       handlePayByAccountToken={handlePayByAccountToken}
     />
+    <div>&nbsp;</div>
       {paymentResult && (
-        <pre
-          style={{
-            background: "#1a1a1a",
-            color: "#d4d4d4",
-            padding: "1rem",
-            borderRadius: "6px",
-            marginTop: "1rem",
-            fontSize: "0.95rem",
-            overflowX: "auto"
-          }}
-        >
-          <code>
-            {JSON.stringify(paymentResult, null, 2)}
-          </code>
-        </pre>
+       <div className="gap-4 bg-zinc-900 text-gray-200 p-4 rounded-md text-sm max-w-full overflow-x-auto break-words whitespace-pre-wrap" style={{ maxWidth: '80%' }}>
+  <code>
+    {JSON.stringify(paymentResult, null, 2)}
+  </code>
+</div>
       )}
     </form>
   );

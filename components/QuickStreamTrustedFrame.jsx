@@ -99,7 +99,7 @@ const QuickStreamTrustedFrame = ({ onReady }) => {
   }, [onReady]);
 
   return (
-    <div
+    <div className="mb-6"
       data-quickstream-api="creditCardContainer"
       style={{ height: '300px',  border: '1px solid #ccc', borderRadius: '4px' }}
     >
