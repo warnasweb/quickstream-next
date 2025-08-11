@@ -72,6 +72,8 @@ const QuickStreamPaymentForm = () => {
         console.error('Submit error:', errors);
         return;
       }
+      console.log('Single Use Token data:', data);
+       setPaymentResult(data);
       const tokenId = data?.singleUseToken?.singleUseTokenId;
       if (tokenId) {
         setToken(tokenId);
@@ -104,8 +106,9 @@ const QuickStreamPaymentForm = () => {
         })
           .then(res => {
             setPaymentResult(res.data);
+            console.log('Payment response:', res.data.data.responseCode);
             if (res.data.output === 'success') {
-              alert('Payment successful!');
+              alert('Status: ' + res.data.data.status + '\nResponse code: ' + res.data.data.responseCode + '\nDescription: ' + res.data.data.responseDescription);
             } else {
               alert('Payment failed: ' + (res.data.message || JSON.stringify(res.error)));
             }
@@ -139,7 +142,8 @@ const QuickStreamPaymentForm = () => {
     const accToken = response.data.accountToken || response.data.accountTokenId;
     if (accToken) {
       setAccountToken(accToken);
-      alert('Account token created!');
+      alert('Account Token generated!');
+      //alert('Status: ' + response.data.data.status + '\nResponse code: ' + response.data.data.responseCode + '\nDescription: ' + response.data.data.responseDescription);
     } else {
       alert('Account token not found in response.');
     }
@@ -168,8 +172,9 @@ const handlePayByAccountToken = async (e) => {
         isAccountToken: true, // Optional: let your backend know this is an account token
       });
       setPaymentResult(response.data);
+
       setLoading(false);
-      alert('Payment by account token processed!');
+      alert('Status: ' + response.data.data.status + '\nResponse code: ' + response.data.data.responseCode + '\nDescription: ' + response.data.data.responseDescription);
     } catch (error) {
       setPaymentResult(error.response?.data || { error: error.message });
       setLoading(false);
@@ -182,7 +187,7 @@ const handlePayByAccountToken = async (e) => {
     
     <form onSubmit={handleSubmit} style={{ padding: '1rem' }}>
       <h2 className="text-3xl font-bold mb-6 text-center text-blue-700">
-  QuickStream Payment
+  QuickStream Payment Demo
 </h2>
       <div>card number: 4242424242424242</div>
       <QuickStreamTrustedFrame onReady={handleTrustedFrameReady} />
@@ -218,9 +223,9 @@ const handlePayByAccountToken = async (e) => {
         />
       </div>
       <br />
-      <button type="submit" className="mt-4 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors font-semibold shadow" style={{ marginTop: '1rem' }}>
+      {/* <button type="submit" className="mt-4 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors font-semibold shadow" style={{ marginTop: '1rem' }}>
         Submit Payment
-      </button>
+      </button> */}
 
 {loading && (
   <div className="flex items-center justify-center my-4">

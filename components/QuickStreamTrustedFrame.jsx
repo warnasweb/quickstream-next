@@ -87,6 +87,20 @@ const QuickStreamTrustedFrame = ({ onReady }) => {
               console.log('Cardholder Name set successfully:', data);
             }
           });
+          var style = {
+                color: "blue",
+                "font-size": "14px",
+                "font-weight": "bold",
+            };
+
+          trustedFrame.changeStyle( "labels", style, function( errors, data ) {
+            if ( errors ) {
+                // Handle errors here
+            }
+            else {
+                console.log( "labels styling has been changed!" );
+            }
+        } );
           
           }
         });
