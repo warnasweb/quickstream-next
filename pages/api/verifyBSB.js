@@ -14,12 +14,12 @@ export default async function handler(req, res) {
 
   try {
     const apiResponse = await axios.post(
-      "https://auspaynet-bicbsb-api-dev.azure-api.net/BSBQuery/manual/paths/invoke",
+      "https://auspaynet-bicbsb-api-prod.azure-api.net/BSBQuery-V2/manual/paths/invoke",
       { bsbcode },
       {
         headers: {
           "Content-Type": "application/json",
-          "Ocp-Apim-Subscription-Key": "3787c04ea9834d5aa7e30c0355a7cc93",
+          "Ocp-Apim-Subscription-Key": "4a6f5b91d40d4b6ea117d9d8c68b8371",
           // If they require auth header, uncomment the line below:
            "Primary": "CX_BSB",
         },
