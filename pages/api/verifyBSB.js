@@ -33,6 +33,7 @@ export default async function handler(req, res) {
         return res.status(200).json({
           status: "success",
           bankName: parsedData[0].FIName.trim(),
+          response: parsedData[0],
         });
       }
     }

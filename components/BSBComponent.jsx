@@ -28,6 +28,7 @@ export default function BSBComponent() {
       const res = await axios.post("/api/verifyBSB", { bsb: bsbNumber });
       setResult(res.data.bankName);
       setStatus("success");
+      console.log(res.data.response);
     } catch (err) {
       setResult("Invalid BSB");
       setStatus("error");
