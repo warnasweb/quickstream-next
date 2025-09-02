@@ -1,6 +1,7 @@
 import Image from "next/image";
 import QuickStreamPaymentForm from "../components/QuickStreamPaymentForm";
 import BSBComponent from "@/components/BSBComponent";
+import SignaturePad from "@/components/SignaturePad";
 
 export default function Home() {
   return (
@@ -10,7 +11,9 @@ export default function Home() {
         {/* Payment form appears on page load */}
         <QuickStreamPaymentForm />
         <BSBComponent />
-        </main>
+        <SignaturePad
+        />
+      </main>
     </div>
   );
 }
