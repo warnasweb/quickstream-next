@@ -25,68 +25,74 @@ export default function SignatureBox({
 
   const handleClear = () => sigRef.current && sigRef.current.clear();
 
-  const composeWithWatermark = (trimmedCanvas, cidValue) => {
-    // Create an offscreen canvas with a dedicated footer band and a margin gap
-    const w = trimmedCanvas.width;
-    const h = trimmedCanvas.height;
-    const footerH = 44;   // height for label area
-    const gapY = 12;      // vertical margin between signature and footer text
+  const composeWithWatermark = (trimmedCanvas, cidValue, targetWidth, minSigHeight) => {
+    // Ensure the final image is large enough for signature + gap + footer
+    const srcW = trimmedCanvas.width;
+    const srcH = trimmedCanvas.height;
+
+    const gapY = 12;      // vertical gap between signature and footer
+    const footerH = 44;   // footer band height
+
+    const outW = Math.max(srcW, Number(targetWidth) || srcW);
+    const sigH = Math.max(srcH, Number(minSigHeight) || srcH);
+    const outH = sigH + gapY + footerH;
 
     const off = document.createElement('canvas');
-    off.width = w;
-    off.height = h + gapY + footerH;
+    off.width = outW;
+    off.height = outH;
     const ctx = off.getContext('2d');
 
-    // Solid white background
+    // Background
     ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, off.width, off.height);
+    ctx.fillRect(0, 0, outW, outH);
 
-    // Draw the signature at the top (unchanged)
-    ctx.drawImage(trimmedCanvas, 0, 0);
+    // Draw signature at the top-left (keep original size, avoid pixelation)
+    // Center horizontally if the signature is narrower than outW
+    const dx = Math.floor((outW - srcW) / 2);
+    ctx.drawImage(trimmedCanvas, dx, 0);
 
-    // Footer background (starts AFTER the margin gap)
+    // Footer background below the signature area
     ctx.fillStyle = '#f8fafc';
-    ctx.fillRect(0, h + gapY, w, footerH);
+    ctx.fillRect(0, sigH + gapY, outW, footerH);
 
-    // Separator line at the top of the footer (leaving gap above it)
+    // Separator line
     ctx.strokeStyle = '#e2e8f0';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(0, h + gapY + 0.5);
-    ctx.lineTo(w, h + gapY + 0.5);
+    ctx.moveTo(0, sigH + gapY + 0.5);
+    ctx.lineTo(outW, sigH + gapY + 0.5);
     ctx.stroke();
 
-    // Build labels
+    // Labels
     const ts = new Date().toLocaleString('en-AU', { timeZone: 'Australia/Sydney' });
     const safeCid = (cidValue || 'UNKNOWN').toString().trim() || 'UNKNOWN';
-    const leftText = `signed by: ${safeCid} on `;
+    const leftText = `Customer ID: ${safeCid}`;
     const rightText = ts;
 
     // Fit text if very long
     const pad = 10;
     const baseFont = 'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto';
-    let size = 14;
     ctx.textBaseline = 'middle';
     ctx.fillStyle = '#0f172a';
 
     const fitAndDraw = (text, align, x) => {
-      size = 14;
+      let size = 14;
       ctx.textAlign = align;
       ctx.font = `${size}px ${baseFont}`;
-      const max = (w / 2) - pad * 2;
+      const max = (outW / 2) - pad * 2;
       while (ctx.measureText(text).width > max && size > 10) {
         size -= 1;
         ctx.font = `${size}px ${baseFont}`;
       }
-      ctx.fillText(text, x, h + gapY + footerH / 2);
+      ctx.fillText(text, x, sigH + gapY + footerH / 2);
     };
 
-
     fitAndDraw(leftText, 'left', pad);
-    fitAndDraw(rightText, 'right', w - pad);
+    fitAndDraw(rightText, 'right', outW - pad);
 
     return off;
   };
+
 
   const handleSave = async () => {
     if (!sigRef.current || sigRef.current.isEmpty()) {
@@ -98,7 +104,7 @@ export default function SignatureBox({
     const trimmed = sigRef.current.getTrimmedCanvas();
 
     // 2) Compose final image with Customer ID watermark
-    const finalCanvas = composeWithWatermark(trimmed, cid);
+    const finalCanvas = composeWithWatermark(trimmed, cid, width, height);
 
     // 3) Convert to base64
     const dataUrl = finalCanvas.toDataURL('image/png');
@@ -143,7 +149,6 @@ export default function SignatureBox({
         />
       </div>
       <div className="mb-2 flex items-center gap-3">
-        
         <button onClick={handleClear} className="px-3 py-1.5 rounded bg-slate-100 hover:bg-slate-200">Clear</button>
         <button onClick={handleSave} className="px-3 py-1.5 rounded bg-emerald-600 text-white">Save (embed ID & download)</button>
       </div>
