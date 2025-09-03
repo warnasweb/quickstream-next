@@ -26,16 +26,17 @@ export default function SignatureBox({
   const handleClear = () => sigRef.current && sigRef.current.clear();
 
   const composeWithWatermark = (trimmedCanvas, cidValue, targetWidth, minSigHeight) => {
-    // Ensure the final image is large enough for signature + gap + footer
+    // Ensure the final image is large enough for signature + top margin + gap + footer
     const srcW = trimmedCanvas.width;
     const srcH = trimmedCanvas.height;
 
-    const gapY = 12;      // vertical gap between signature and footer
-    const footerH = 44;   // footer band height
+    const topPad = 12;   // NEW: top margin so signature isn't touching the top
+    const gapY = 12;     // gap between signature and footer
+    const footerH = 44;  // footer band height
 
     const outW = Math.max(srcW, Number(targetWidth) || srcW);
     const sigH = Math.max(srcH, Number(minSigHeight) || srcH);
-    const outH = sigH + gapY + footerH;
+    const outH = topPad + sigH + gapY + footerH;
 
     const off = document.createElement('canvas');
     off.width = outW;
@@ -46,21 +47,22 @@ export default function SignatureBox({
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, outW, outH);
 
-    // Draw signature at the top-left (keep original size, avoid pixelation)
-    // Center horizontally if the signature is narrower than outW
+    // Draw signature with horizontal centering and top margin
     const dx = Math.floor((outW - srcW) / 2);
-    ctx.drawImage(trimmedCanvas, dx, 0);
+    const dy = topPad; // apply topPad
+    ctx.drawImage(trimmedCanvas, dx, dy);
 
-    // Footer background below the signature area
+    // Footer background below the signature area (after gap)
+    const footerY = topPad + sigH + gapY;
     ctx.fillStyle = '#f8fafc';
-    ctx.fillRect(0, sigH + gapY, outW, footerH);
+    ctx.fillRect(0, footerY, outW, footerH);
 
     // Separator line
     ctx.strokeStyle = '#e2e8f0';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(0, sigH + gapY + 0.5);
-    ctx.lineTo(outW, sigH + gapY + 0.5);
+    ctx.moveTo(0, footerY + 0.5);
+    ctx.lineTo(outW, footerY + 0.5);
     ctx.stroke();
 
     // Labels
@@ -84,7 +86,7 @@ export default function SignatureBox({
         size -= 1;
         ctx.font = `${size}px ${baseFont}`;
       }
-      ctx.fillText(text, x, sigH + gapY + footerH / 2);
+      ctx.fillText(text, x, footerY + footerH / 2);
     };
 
     fitAndDraw(leftText, 'left', pad);
@@ -92,7 +94,6 @@ export default function SignatureBox({
 
     return off;
   };
-
 
   const handleSave = async () => {
     if (!sigRef.current || sigRef.current.isEmpty()) {
@@ -124,7 +125,7 @@ export default function SignatureBox({
 
     // 6) POST base64 to backend
     try {
-      const res = await fetch('/api/signature-base64', {
+      const res = await fetch('/api/signature', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ imageBase64: dataUrl, customerId: (cid || 'UNKNOWN').toString().trim() || 'UNKNOWN' }),
