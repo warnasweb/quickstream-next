@@ -114,7 +114,7 @@ export default function SignatureBox({
     console.log('Client: base64 length', dataUrl.length);
     console.log('Client: base64 preview', dataUrl.slice(0, 120) + '...');
 
-    // 5) Trigger download
+    // 5) Trigger PNG download (optional)
     const tsFile = new Date().toISOString().replace(/[:.]/g, '-');
     const safeCid = (cid || 'UNKNOWN').toString().trim() || 'UNKNOWN';
     const fname = `${downloadPrefix}-${safeCid}-${tsFile}.png`;
@@ -123,15 +123,30 @@ export default function SignatureBox({
     a.download = fname;
     a.click();
 
-    // 6) POST base64 to backend
+    // 6) POST base64 to backend and handle PDF download
     try {
       const res = await fetch('/api/signature', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageBase64: dataUrl, customerId: (cid || 'UNKNOWN').toString().trim() || 'UNKNOWN' }),
+        body: JSON.stringify({
+          imageBase64: dataUrl,
+          accountName: safeCid,
+          bsb: '123-456', // You can make these dynamic if needed
+          accountNumber: '12345678'
+        }),
       });
       const json = await res.json();
       console.log('Server response:', json);
+
+      // Download PDF if available
+      if (json.pdfBase64) {
+        const a = document.createElement('a');
+        a.href = json.pdfBase64;
+        a.download = `signature-${safeCid}-${Date.now()}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
     } catch (e) {
       console.error('Failed to send to server', e);
     }

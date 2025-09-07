@@ -201,28 +201,39 @@ export default function SignaturePad({
     const result = await exportPNG();
     const { dataUrl } = result; // base64 data URL
 
-    // 1) Print base64 (truncated) to the BROWSER console
-    console.log('Client: base64 length', dataUrl.length);
-    console.log('Client: base64 preview', dataUrl.slice(0, 100) + '...');
-
-    // 2) Send to backend as JSON (base64 in body)
     try {
       const res = await fetch('/api/signature', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageBase64: dataUrl })
+        body: JSON.stringify({
+          imageBase64: dataUrl,
+          accountName: 'Rajesh Warna', // or get from input
+          bsb: '123-456',              // or get from input
+          accountNumber: '12345678'    // or get from input
+        })
       });
       const json = await res.json();
-      console.log('Server response:', json);
+      if (json.pdfBase64) {
+        // Download the PDF
+        const a = document.createElement('a');
+        a.href = json.pdfBase64;
+        a.download = `signature-${Date.now()}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      } else {
+        alert('Failed to generate PDF');
+      }
     } catch (e) {
       console.error('Failed to POST base64 to server', e);
+      alert('Failed to generate PDF');
     }
 
-    // Optional: still download locally for the user
-    const a = document.createElement('a');
-    a.href = dataUrl;
-    a.download = `signature-${Date.now()}.png`;
-    a.click();
+    // Optionally: still download PNG locally for the user
+    // const a = document.createElement('a');
+    // a.href = dataUrl;
+    // a.download = `signature-${Date.now()}.png`;
+    // a.click();
 
     // Notify parent if needed
     onSave && onSave(result);
