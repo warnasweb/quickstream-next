@@ -36,7 +36,7 @@ function getFortnightlyDeferralDates(lastPaymentDate, currentDate) {
   function inLockout(ddr) {
     const lockoutStart = new Date(ddr);
     lockoutStart.setDate(ddr.getDate() - 2);
-    return today >= lockoutStart && today < ddr;
+    return today >= lockoutStart && today <= ddr;
   }
 
   let cycleStage = "";
