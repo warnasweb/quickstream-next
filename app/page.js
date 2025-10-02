@@ -3,6 +3,7 @@ import QuickStreamPaymentForm from "../components/QuickStreamPaymentForm";
 import BSBComponent from "@/components/BSBComponent";
 import SignaturePad from "@/components/SignaturePad";
 import SignatureBox from "@/components/SignatureBox";
+import DeferDate from "@/components/DeferDate";
 
 export default function Home() {
   return (
@@ -16,6 +17,7 @@ export default function Home() {
             <div className="p-6">
           <h1 className="text-xl font-semibold mb-4">Sign below</h1>
           <SignatureBox />
+          <DeferDate />
         </div>
       </main>
     </div>
