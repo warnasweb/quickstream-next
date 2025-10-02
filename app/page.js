@@ -4,6 +4,7 @@ import BSBComponent from "@/components/BSBComponent";
 import SignaturePad from "@/components/SignaturePad";
 import SignatureBox from "@/components/SignatureBox";
 import DeferDate from "@/components/DeferDate";
+import DeferDate_Fort from "@/components/DeferDate_Fort";
 
 export default function Home() {
   return (
@@ -18,6 +19,7 @@ export default function Home() {
           <h1 className="text-xl font-semibold mb-4">Sign below</h1>
           <SignatureBox />
           <DeferDate />
+          <DeferDate_Fort />
         </div>
       </main>
     </div>
