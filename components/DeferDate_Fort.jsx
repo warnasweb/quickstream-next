@@ -32,50 +32,55 @@ function getFortnightlyDeferralDates(lastPaymentDate, currentDate) {
 
   const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
 
-  // Helper: check if today is inside lockout before a DDR
-  function inLockout(ddr) {
+  // Helper: check lockout window for a DDR (inclusive of DDR day)
+  function inLockout(ddr, date) {
     const lockoutStart = new Date(ddr);
     lockoutStart.setDate(ddr.getDate() - 2);
-    return today >= lockoutStart && today <= ddr;
+    return date >= lockoutStart && date <= ddr;
   }
 
   let cycleStage = "";
   let start, end;
 
   if (today < cycle1) {
-    if (inLockout(cycle1)) {
+    if (inLockout(cycle1, today)) {
       return {
         cycles: [cycle1, cycle2, cycle3],
         validDates: [],
-        status: "❌ In lockout before Cycle 1",
+        status: "❌ In lockout around Cycle 1",
         window: null,
       };
     }
     cycleStage = "pre-cycle";
     start = new Date(today);
-    start.setDate(start.getDate() + 1); // only future dates
-    end = new Date(cycle2);
+    start.setDate(start.getDate() + 1);
+    end = new Date(cycle1);
     end.setDate(end.getDate() - 2);
   } else if (today >= cycle1 && today < cycle2) {
-    if (inLockout(cycle1)) {
+    if (inLockout(cycle1, today)) {
       return {
         cycles: [cycle1, cycle2, cycle3],
         validDates: [],
-        status: "❌ In lockout before Cycle 1",
+        status: "❌ In lockout around Cycle 1",
         window: null,
       };
     }
     cycleStage = "first";
     start = new Date(today);
     start.setDate(start.getDate() + 1);
-    end = new Date(cycle2);
-    end.setDate(end.getDate() - 2);
+    // Extend to end of month (or 2 days before cycle3 if within same month)
+    if (cycle3.getMonth() === today.getMonth()) {
+      end = new Date(cycle3);
+      end.setDate(end.getDate() - 2);
+    } else {
+      end = endOfMonth;
+    }
   } else if (today >= cycle2 && today < cycle3) {
-    if (inLockout(cycle2)) {
+    if (inLockout(cycle2, today)) {
       return {
         cycles: [cycle1, cycle2, cycle3],
         validDates: [],
-        status: "❌ In lockout before Cycle 2",
+        status: "❌ In lockout around Cycle 2",
         window: null,
       };
     }
@@ -97,13 +102,24 @@ function getFortnightlyDeferralDates(lastPaymentDate, currentDate) {
     };
   }
 
-  // Collect valid Tue/Thu > today
+  // Collect valid Tue/Thu > today, exclude DDRs and lockout ranges
   const validDates = [];
   let iter = new Date(start);
 
   while (iter <= end) {
     const day = iter.getDay(); // Tue=2, Thu=4
-    if ((day === 2 || day === 4) && iter > today) {
+
+    const isDDR = [cycle1, cycle2, cycle3].some(
+      (c) => iter.toDateString() === c.toDateString()
+    );
+
+    if (
+      (day === 2 || day === 4) &&
+      iter > today &&
+      !isDDR &&
+      !inLockout(cycle1, iter) &&
+      !inLockout(cycle2, iter)
+    ) {
       validDates.push(new Date(iter));
     }
     iter.setDate(iter.getDate() + 1);

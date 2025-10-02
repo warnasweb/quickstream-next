@@ -6,29 +6,62 @@ function getMonthlyDeferralDates(selectedYear, selectedMonth, today) {
   const dueDate = new Date(selectedYear, selectedMonth, 24);
   const endOfMonth = new Date(selectedYear, selectedMonth + 1, 0);
 
-  const validDates = [];
-  let iter;
-
-  if (selectedYear === today.getFullYear() && selectedMonth === today.getMonth()) {
-    iter = new Date(today);
-    iter.setDate(today.getDate() + 1); // start tomorrow if same month
-  } else {
-    iter = new Date(selectedYear, selectedMonth, 1);
+  // Bill generation cutoff
+  if (
+    today.getFullYear() === selectedYear &&
+    today.getMonth() === selectedMonth &&
+    today.getDate() < 5
+  ) {
+    return {
+      dueDate,
+      validDates: [],
+      status: "❌ No deferral allowed before 4th (bill not generated)",
+      window: null,
+    };
   }
+
+  const cutoff = new Date(selectedYear, selectedMonth, 22); // DDR-2
+
+  // If in lockout or after DDR → no deferral
+  if (today >= cutoff) {
+    return {
+      dueDate,
+      validDates: [],
+      status: "❌ No deferral allowed (within lockout or past DDR)",
+      window: null,
+    };
+  }
+
+  // Otherwise allow from tomorrow → end of month (excluding DDR itself)
+  let start = new Date(today);
+  start.setDate(start.getDate() + 1);
+
+  const validDates = [];
+  let iter = new Date(start);
 
   while (iter <= endOfMonth) {
     const day = iter.getDay(); // Tue=2, Thu=4
-    if (day === 2 || day === 4) {
+    const isDDR = iter.getDate() === 24;
+    if ((day === 2 || day === 4) && !isDDR && iter > today) {
       validDates.push(new Date(iter));
     }
     iter.setDate(iter.getDate() + 1);
   }
 
-  return { dueDate, validDates };
+  return {
+    dueDate,
+    validDates,
+    status: validDates.length
+      ? "✅ Deferral allowed"
+      : "❌ No valid defer dates",
+    window: { start, end: endOfMonth },
+  };
 }
 
 export default function MonthlyDDRPicker() {
-  const [todayDate, setTodayDate] = useState(new Date().toISOString().split("T")[0]);
+  const [todayDate, setTodayDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
   const today = new Date(todayDate);
 
   const [selectedMonth, setSelectedMonth] = useState(today.getMonth());
@@ -64,7 +97,9 @@ export default function MonthlyDDRPicker() {
           onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
         >
           {months.map((m, i) => (
-            <option key={i} value={i}>{m}</option>
+            <option key={i} value={i}>
+              {m}
+            </option>
           ))}
         </select>
 
@@ -73,29 +108,45 @@ export default function MonthlyDDRPicker() {
           value={selectedYear}
           onChange={(e) => setSelectedYear(parseInt(e.target.value))}
         >
-          {Array.from({ length: 5 }, (_, i) => today.getFullYear() + i).map((y) => (
-            <option key={y} value={y}>{y}</option>
-          ))}
+          {Array.from({ length: 5 }, (_, i) => today.getFullYear() + i).map(
+            (y) => (
+              <option key={y} value={y}>
+                {y}
+              </option>
+            )
+          )}
         </select>
       </div>
 
       <p className="text-sm text-gray-600 mb-2">
-        DDR Date: {monthly.dueDate.toLocaleDateString("en-AU", {
-          weekday: "long", day: "numeric", month: "long", year: "numeric",
-        })}<br/>
-        Deferral allowed until 22nd of this month.
+        DDR Date:{" "}
+        {monthly.dueDate.toLocaleDateString("en-AU", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        })}
+        <br />
+        Deferral allowed until 2 days before DDR (22nd in this case).
       </p>
 
-      {selectedYear === today.getFullYear() &&
-       selectedMonth === today.getMonth() &&
-       today.getDate() > 22 ? (
-        <p className="text-red-600 font-medium">❌ Deferral window closed.</p>
-      ) : monthly.validDates.length > 0 ? (
+      <p className="text-sm font-medium mb-2">{monthly.status}</p>
+
+      {monthly.window && (
+        <p className="text-xs text-gray-500 mb-2">
+          Allowed Window: {monthly.window.start.toLocaleDateString("en-AU")} →{" "}
+          {monthly.window.end.toLocaleDateString("en-AU")}
+        </p>
+      )}
+
+      {monthly.validDates.length > 0 ? (
         <ul className="list-disc pl-5">
           {monthly.validDates.map((date) => (
             <li key={date.toISOString()}>
               {date.toLocaleDateString("en-AU", {
-                weekday: "long", day: "numeric", month: "long"
+                weekday: "long",
+                day: "numeric",
+                month: "long",
               })}
             </li>
           ))}
