@@ -4,7 +4,7 @@ import axios from 'axios';
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
-  const { paymentToken, amount, isAccountToken } = req.body;
+  const { paymentToken, amount, isAccountToken, customerReferenceNumber, paymentReferenceNumber } = req.body;
 
   if (!paymentToken) {
     return res.status(400).json({ message: 'Payment token missing' });
@@ -23,6 +23,12 @@ export default async function handler(req, res) {
         transactionType: 'PAYMENT',
         supplierBusinessCode: 'C01855',
         principalAmount: amount,
+        ...(customerReferenceNumber
+          ? { customerReferenceNumber }
+          : {}),
+        ...(paymentReferenceNumber
+          ? { paymentReferenceNumber }
+          : {}),
         eci: 'MAIL',
         currency: 'AUD',
         ipAddress: '58.178.80.237',

@@ -11,7 +11,9 @@ const QuickStreamPaymentForm = () => {
   const [paymentResult, setPaymentResult] = useState(null);
   const [amount, setAmount] = useState('100.00'); // Default amount
   const [accountToken, setAccountToken] = useState('');
+  const [customerReferenceNumber, setCustomerReferenceNumber] = useState('');
   const [loading, setLoading] = useState(false);
+  const [paymentReferenceNumber, setPaymentReferenceNumber] = useState('');
 
   const handleTrustedFrameReady = (frame) => {
     trustedFrameRef.current = frame;
@@ -40,7 +42,9 @@ const QuickStreamPaymentForm = () => {
         // Call the Next.js API route instead of a backend server
         axios.post('/api/pay', {
           paymentToken: tokenId,
-          amount: parseFloat(amount)
+          amount: parseFloat(amount),
+          customerReferenceNumber,
+          paymentReferenceNumber,
         })
           .then(res => {
             setPaymentResult(res.data);
@@ -102,7 +106,9 @@ const QuickStreamPaymentForm = () => {
         setToken(tokenId);
         axios.post('/api/pay', {
           paymentToken: tokenId,
-          amount: parseFloat(amount)
+          amount: parseFloat(amount),
+          customerReferenceNumber,
+          paymentReferenceNumber,
         })
           .then(res => {
             setPaymentResult(res.data);
@@ -169,7 +175,9 @@ const handlePayByAccountToken = async (e) => {
       const response = await axios.post('/api/pay', {
         paymentToken: accountToken,
         amount: parseFloat(amount),
+        customerReferenceNumber,
         isAccountToken: true, // Optional: let your backend know this is an account token
+        paymentReferenceNumber,
       });
       setPaymentResult(response.data);
 
@@ -209,7 +217,7 @@ const handlePayByAccountToken = async (e) => {
         </div>
       )}
       
-      <div className="mb-4">
+      <div className="mb-4 max-w-xs">
         <label htmlFor="amount" className="block font-semibold mb-1">Amount (AUD):</label>
         <input
           id="amount"
@@ -220,6 +228,30 @@ const handlePayByAccountToken = async (e) => {
           onChange={e => setAmount(e.target.value)}
           className="border rounded px-3 py-2 w-full"
           required
+        />
+      </div>
+      <div className="mb-4 max-w-xs">
+        <label htmlFor="customerReferenceNumber" className="block font-semibold mb-1">Customer Reference:</label>
+        <input
+          id="customerReferenceNumber"
+          name="customerReferenceNumber"
+          type="text"
+          value={customerReferenceNumber}
+          onChange={e => setCustomerReferenceNumber(e.target.value)}
+          className="border rounded px-3 py-2 w-full"
+          placeholder="Enter customer reference"
+        />
+      </div>
+      <div className="mb-4 max-w-xs">
+        <label htmlFor="paymentReferenceNumber" className="block font-semibold mb-1">Payment Reference:</label>
+        <input
+          id="paymentReferenceNumber"
+          name="paymentReferenceNumber"
+          type="text"
+          value={paymentReferenceNumber}
+          onChange={e => setPaymentReferenceNumber(e.target.value)}
+          className="border rounded px-3 py-2 w-full"
+          placeholder="Enter payment reference"
         />
       </div>
       <br />
